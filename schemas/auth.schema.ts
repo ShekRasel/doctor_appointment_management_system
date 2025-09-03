@@ -4,7 +4,7 @@ export const patientRegisterSchema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
-  photo_url: z.string().url("Must be a valid URL").optional(),
+  photo_url: z.string().url().optional().or(z.literal("")),
 });
 
 export const doctorRegisterSchema = z.object({
@@ -12,7 +12,7 @@ export const doctorRegisterSchema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   specialization: z.string().min(2, "Specialization is required"),
-  photo_url: z.string().url("Must be a valid URL").optional(),
+  photo_url: z.string().url().optional().or(z.literal("")),
 });
 
 export type PatientForm = z.infer<typeof patientRegisterSchema>;

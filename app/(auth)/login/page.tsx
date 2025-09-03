@@ -1,18 +1,18 @@
 "use client";
 
-import { api } from "@/helpers/helper";
+import { api, setToken } from "@/helpers/helper";
 import { useAuthStore } from "@/stores/auth.store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { AxiosError } from "axios";
-import { useState } from "react";
+import { AxiosError, AxiosResponse } from "axios";
 import { useForm } from "react-hook-form";
 import Link from "next/link";
 import { LoginForm, loginSchema } from "@/schemas/auth.schema";
+import toast from "react-hot-toast";
+import { LoginResponse } from "@/types/auth.type";
 
 export default function LoginPage() {
   const { setRole } = useAuthStore();
-  const [error, setError] = useState("");
 
   const {
     register,
@@ -22,25 +22,34 @@ export default function LoginPage() {
     resolver: zodResolver(loginSchema),
   });
 
+  // response handling
   const mutation = useMutation({
-    mutationFn: async (data: LoginForm) => {
+    mutationFn: async (
+      data: LoginForm
+    ): Promise<AxiosResponse<LoginResponse>> => {
       return await api.post(`/auth/login`, data);
     },
-    onSuccess: (res) => {
-      console.log("Backend response:", res.data);
-      alert("Login successful");
+
+    onSuccess: (res: AxiosResponse<LoginResponse>) => {
+      const msg: string = res.data.message;
+      const token: string = res.data.data.token;
+      setToken(token);
+      toast.success(msg);
     },
+
     onError: (err: unknown) => {
       if (err instanceof AxiosError) {
-        setError(err.response?.data?.message || "Something went wrong");
+        const msg = err.response?.data?.message || "Something went wrong";
+        toast.error(msg);
       } else {
         toast.error("Unexpected error occurred");
       }
     },
   });
 
+  //submit data
   const onSubmit = (data: LoginForm) => {
-    setRole(data.role); // save role globally
+    setRole(data.role);
     mutation.mutate(data);
   };
 
@@ -51,6 +60,7 @@ export default function LoginPage() {
           Sign in to Your Account
         </h2>
 
+        {/* fields */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
           <div>
             <label className="block text-xs font-medium mb-1">Email</label>
@@ -102,8 +112,7 @@ export default function LoginPage() {
             )}
           </div>
 
-          {error && <p className="text-red-500 text-xs mt-0.5 text-center">{error}</p>}
-
+          {/* submit form button*/}
           <button
             type="submit"
             disabled={mutation.isPending}
@@ -112,6 +121,7 @@ export default function LoginPage() {
             {mutation.isPending ? "Signing in..." : "Sign in"}
           </button>
 
+          {/* register link */}
           <p className="text-xs text-gray-500 text-center mt-2">
             Don’t have an account?{" "}
             <span className="text-blue-600 hover:underline cursor-pointer">

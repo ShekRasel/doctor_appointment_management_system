@@ -22,3 +22,46 @@ export interface LoginForm {
   password: string;
   role: string;
 }
+
+// User structure
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "PATIENT" | "DOCTOR";
+  photo_url: string | null;
+  specialization: string | null;
+}
+
+// Data wrapper
+interface LoginResponseData {
+  user: User;
+  token: string;
+}
+
+//Full backend response
+export interface LoginResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: LoginResponseData;
+}
+
+//resgistration res
+interface RegisteredUser {
+  id: string;
+  name: string;
+  email: string;
+  role: "PATIENT" | "DOCTOR";
+  photo_url: string | null;
+  specialization: string | null;
+  createdAt: string;
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  statusCode: number;
+  message: string;
+  data: RegisteredUser;
+}
+

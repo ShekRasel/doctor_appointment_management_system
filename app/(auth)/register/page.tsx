@@ -11,18 +11,18 @@ import {
   RegisterDoctor,
   RegisterForm,
   RegisterPatient,
+  RegisterResponse,
 } from "@/types/auth.type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
-import { AxiosError } from "axios";
-import { useState } from "react";
+import { AxiosError, AxiosResponse } from "axios";
 import { FieldErrors, useForm } from "react-hook-form";
 import specializations from "@/data/specializations.json";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function RegisterPage() {
   const { role, setRole } = useAuthStore();
-  const [error, setError] = useState("");
 
   const schema =
     role === "patient" ? patientRegisterSchema : doctorRegisterSchema;
@@ -35,23 +35,30 @@ export default function RegisterPage() {
     resolver: zodResolver(schema),
   });
 
+  //response handing
   const mutation = useMutation({
-    mutationFn: async (data: RegisterPatient | RegisterDoctor) => {
+    mutationFn: async (
+      data: RegisterPatient | RegisterDoctor
+    ): Promise<AxiosResponse<RegisterResponse>> => {
       return await api.post(`/auth/register/${role}`, data);
     },
-    onSuccess: (res) => {
-      console.log(res.data);
-      alert("Registration successful");
+
+    onSuccess: (res: AxiosResponse<RegisterResponse>) => {
+      const msg = res.data.message;
+      toast.success(msg);
     },
+
     onError: (err: unknown) => {
       if (err instanceof AxiosError) {
-        setError(err.response?.data?.message || "Something went wrong");
+        const msg = err.response?.data?.message || "Something went wrong";
+        toast.error(msg);
       } else {
-        setError("Unexpected error occurred");
+        toast.error("Unexpected error occurred");
       }
     },
   });
 
+  // submit call
   const onSubmit = (data: RegisterForm) => {
     mutation.mutate(data);
   };
@@ -136,6 +143,7 @@ export default function RegisterPage() {
             )}
           </div>
 
+          {/* role wise field select */}
           {role === "doctor" && (
             <div>
               <label className="block  text-xs font-medium mb-1">
@@ -168,28 +176,20 @@ export default function RegisterPage() {
               Photo URL (optional)
             </label>
             <input
-              type="url"
+              type="text"
               placeholder="https://example.com/photo.jpg"
-              {...register("photo_url", {
-                required: false, 
-                validate: (value) => {
-                  if (!value) return true;
-                  try {
-                    new URL(value);
-                    return true;
-                  } catch {
-                    return "Must be a valid URL";
-                  }
-                },
-              })}
-              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 transition"
+              {...register("photo_url")}
+              className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md"
             />
+
+            {errors.photo_url && (
+              <p className="text-red-500 text-xs mt-0.5">
+                {errors.photo_url.message as string}
+              </p>
+            )}
           </div>
 
-          {error && (
-            <p className="text-red-500 text-xs mt-0.5 text-center">{error}</p>
-          )}
-
+          {/* submit buttom */}
           <button
             type="submit"
             disabled={mutation.isPending}
@@ -198,6 +198,7 @@ export default function RegisterPage() {
             {mutation.isPending ? "Registering..." : "Register"}
           </button>
 
+          {/* Login link */}
           <p className="text-xs text-gray-500 text-center mt-2">
             Already have an account?{" "}
             <span className="text-blue-600 hover:underline cursor-pointer">

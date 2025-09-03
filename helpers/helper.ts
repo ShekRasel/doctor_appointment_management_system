@@ -8,3 +8,13 @@ export const BASE_URL: string =
 export const api = axios.create({
   baseURL: BASE_URL,
 });
+
+//get token
+export const getToken = () => {
+  return localStorage.getItem("token");
+};
+
+//set token
+export const setToken = (tokenString: string) => {
+  localStorage.setItem("token", tokenString);
+};
