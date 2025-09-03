@@ -34,7 +34,7 @@ export default function LoginPage() {
       if (err instanceof AxiosError) {
         setError(err.response?.data?.message || "Something went wrong");
       } else {
-        setError("Unexpected error occurred");
+        toast.error("Unexpected error occurred");
       }
     },
   });
