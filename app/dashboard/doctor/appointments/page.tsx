@@ -19,6 +19,17 @@ type Appointment = {
   status: string;
 };
 
+// Status options for the filter (label for user, value for backend)
+const statusOptions = [
+  { label: "All Status", value: "" },
+  { label: "Pending", value: "PENDING" },
+  { label: "Complete", value: "COMPLETE" }, // will be handled carefully
+  { label: "Cancelled", value: "CANCELLED" },
+];
+
+// Only these are safe to send to the GET /appointments/doctor endpoint
+const validGetStatuses = ["PENDING", "CANCELLED"]; // adjust according to your backend
+
 const DoctorAppointmentsPage = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -28,6 +39,7 @@ const DoctorAppointmentsPage = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
+  // Fetch appointments
   const fetchAppointments = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -37,12 +49,17 @@ const DoctorAppointmentsPage = () => {
 
     setLoading(true);
     try {
+      
+      const params: Record<string, string | number | undefined> = { page };
+      if (statusFilter && validGetStatuses.includes(statusFilter)) {
+        params.status = statusFilter;
+      }
+      if (dateFilter) {
+        params.date = dateFilter;
+      }
+
       const res = await api.get("/appointments/doctor", {
-        params: {
-          status: statusFilter || undefined,
-          date: dateFilter || undefined,
-          page,
-        },
+        params,
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -60,6 +77,7 @@ const DoctorAppointmentsPage = () => {
     fetchAppointments();
   }, [statusFilter, dateFilter, page]);
 
+  // Update status
   const updateStatus = async (
     appointmentId: string,
     status: "COMPLETE" | "CANCELLED"
@@ -78,7 +96,6 @@ const DoctorAppointmentsPage = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Realtime UI update
       setAppointments((prev) =>
         prev.map((a) => (a.id === appointmentId ? { ...a, status } : a))
       );
@@ -88,6 +105,20 @@ const DoctorAppointmentsPage = () => {
       else toast.error("Failed to update status");
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  // Status badge classes
+  const getStatusClasses = (status: string) => {
+    switch (status) {
+      case "PENDING":
+        return "bg-yellow-100 text-yellow-800";
+      case "COMPLETE":
+        return "bg-green-100 text-green-800";
+      case "CANCELLED":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -102,10 +133,11 @@ const DoctorAppointmentsPage = () => {
           onChange={(e) => setStatusFilter(e.target.value)}
           className="border border-gray-200 p-2 rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
         >
-          <option value="">All Status</option>
-          <option value="PENDING">Pending</option>
-          <option value="COMPLETE">Complete</option>
-          <option value="CANCELLED">Cancelled</option>
+          {statusOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
 
         <input
@@ -126,7 +158,7 @@ const DoctorAppointmentsPage = () => {
           {appointments.map((a) => (
             <li
               key={a.id}
-              className=" bg-white rounded-lg shadow-sm hover:shadow-md transition p-4 flex flex-col gap-3"
+              className="bg-white rounded-lg shadow-sm hover:shadow-md transition p-4 flex flex-col gap-3"
             >
               <div className="flex items-center gap-3">
                 <Image
@@ -145,17 +177,13 @@ const DoctorAppointmentsPage = () => {
                   <p className="text-sm">
                     📅 {new Date(a.date).toLocaleString()}
                   </p>
-                  <p
-                    className={`text-sm font-medium ${
-                      a.status === "PENDING"
-                        ? "text-yellow-600"
-                        : a.status === "COMPLETE"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }`}
+                  <span
+                    className={`inline-block px-2 py-1 rounded-s font-medium text-sm ${getStatusClasses(
+                      a.status
+                    )}`}
                   >
-                    Status: {a.status}
-                  </p>
+                    {a.status}
+                  </span>
                 </div>
               </div>
 
