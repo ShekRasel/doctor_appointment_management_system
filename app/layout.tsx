@@ -3,6 +3,7 @@ import { Roboto } from "next/font/google";
 import "./globals.css";
 import ReactQueryProvider from "@/providers/react-query.provider";
 import { Toaster } from "react-hot-toast";
+import { AuthHydrator } from "@/providers/auth.hydrator";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${roboto.className}`}>
-        <ReactQueryProvider>{children}</ReactQueryProvider>
+        <ReactQueryProvider>
+          <AuthHydrator>{children}</AuthHydrator>
+        </ReactQueryProvider>
         <Toaster position="top-center" reverseOrder={false} />
       </body>
     </html>
