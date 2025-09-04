@@ -12,65 +12,63 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError, AxiosResponse } from "axios";
 import { FieldErrors, useForm } from "react-hook-form";
-import specializations from "@/data/specializations.json";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function RegisterPage() {
   const { role, setRole } = useAuthStore();
   const router = useRouter();
-  // Pick schema based on role
-  const schema =
-    role === "DOCTOR" ? doctorRegisterSchema : patientRegisterSchema;
 
- const {
-  register,
-  handleSubmit,
-  formState: { errors },
-} = useForm<RegisterForm>({
-  resolver: zodResolver(role === "DOCTOR" ? doctorRegisterSchema : patientRegisterSchema),
-  defaultValues: {
-    name: "",
-    email: "",
-    password: "",
-    photo_url: "",
-    specialization: role === "DOCTOR" ? "" : undefined,
-  },
-});
+  // State for specializations
+  const [specializationsList, setSpecializationsList] = useState<string[]>([]);
+  const [loadingSpecs, setLoadingSpecs] = useState(false);
 
-// Mutation
-const mutation = useMutation({
-  mutationFn: async (data: RegisterForm & { selectedRole: "PATIENT" | "DOCTOR" }) => {
-    return api.post<RegisterResponse>(
-      `/auth/register/${data.selectedRole.toLowerCase()}`,
-      data
-    );
-  },
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterForm>({
+    resolver: zodResolver(role === "DOCTOR" ? doctorRegisterSchema : patientRegisterSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+      photo_url: "",
+      specialization: role === "DOCTOR" ? "" : undefined,
+    },
+  });
 
-  onSuccess: (res: AxiosResponse<RegisterResponse>) => {
-    toast.success(res.data.message);
-    console.log(res.data)
-    router.push("/login");
-  },
+  // Mutation
+  const mutation = useMutation({
+    mutationFn: async (data: RegisterForm & { selectedRole: "PATIENT" | "DOCTOR" }) => {
+      return api.post<RegisterResponse>(
+        `/auth/register/${data.selectedRole.toLowerCase()}`,
+        data
+      );
+    },
 
-  onError: (err: unknown) => {
-    if (err instanceof AxiosError) {
-      const msg = err.response?.data?.message || "Something went wrong";
-      toast.error(msg);
-    } else {
-      toast.error("Unexpected error occurred");
-    }
-  },
-});
+    onSuccess: (res: AxiosResponse<RegisterResponse>) => {
+      toast.success(res.data.message);
+      console.log(res.data)
+      router.push("/login");
+    },
 
-// Submit handler
-const onSubmit = (data: RegisterForm) => {
-  // Pass role explicitly when submitting
-  mutation.mutate({ ...data, selectedRole: role as "PATIENT" | "DOCTOR" });
-};
+    onError: (err: unknown) => {
+      if (err instanceof AxiosError) {
+        const msg = err.response?.data?.message || "Something went wrong";
+        toast.error(msg);
+      } else {
+        toast.error("Unexpected error occurred");
+      }
+    },
+  });
 
+  // Submit handler
+  const onSubmit = (data: RegisterForm) => {
+    mutation.mutate({ ...data, selectedRole: role as "PATIENT" | "DOCTOR" });
+  };
 
   // default role
   useEffect(() => {
@@ -79,9 +77,28 @@ const onSubmit = (data: RegisterForm) => {
     }
   }, [role, setRole]);
 
+  // Fetch specializations from API
+  useEffect(() => {
+  if (role === "DOCTOR") {
+    setLoadingSpecs(true);
+    api
+      .get("/specializations")
+      .then((res) => {
+        const specs = Array.isArray(res.data) ? res.data : res.data?.data || [];
+        setSpecializationsList(specs);
+      })
+      .catch((err) => {
+        toast.error("Failed to load specializations");
+        console.error(err);
+      })
+      .finally(() => setLoadingSpecs(false));
+  }
+}, [role]);
+
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4 md:px-8 text-gray-600">
-      <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-3 md:p-4">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 md:px-8 text-gray-600">
+      <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-4 md:p-6">
         <h2 className="text-xl font-semibold text-gray-800 text-center mb-4 tracking-tight">
           Create Your Account
         </h2>
@@ -169,11 +186,12 @@ const onSubmit = (data: RegisterForm) => {
                 {...register("specialization")}
                 className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-400 focus:border-blue-400 transition"
                 defaultValue=""
+                disabled={loadingSpecs}
               >
                 <option value="" disabled>
-                  Select Specialization
+                  {loadingSpecs ? "Loading..." : "Select Specialization"}
                 </option>
-                {specializations.map((spec) => (
+                {specializationsList.map((spec) => (
                   <option key={spec} value={spec}>
                     {spec}
                   </option>
