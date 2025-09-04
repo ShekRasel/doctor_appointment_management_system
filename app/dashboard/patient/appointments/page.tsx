@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/helpers/client.helper";
 import { toast } from "react-hot-toast";
-import Image from "next/image";
 
 type Doctor = {
   id: string;
@@ -40,9 +39,9 @@ const PatientAppointmentsPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const appts = res.data?.data || []; // <--- updated
+      const appts = res.data?.data || [];
       setAppointments(appts);
-      setTotalPages(res.data?.totalPages || 1); // <--- updated
+      setTotalPages(res.data?.totalPages || 1);
     } catch (error: unknown) {
       if (error instanceof Error) toast.error(error.message);
       else toast.error("Failed to fetch appointments");
@@ -63,7 +62,7 @@ const PatientAppointmentsPage = () => {
       <select
         value={status}
         onChange={(e) => setStatus(e.target.value)}
-        className=" p-2 border rounded-sm border-gray-300 shadow mb-4 cursor-pointer"
+        className="p-2 border rounded-sm border-gray-300 shadow mb-4 cursor-pointer"
       >
         <option value="">All</option>
         <option value="PENDING">Pending</option>
@@ -77,26 +76,43 @@ const PatientAppointmentsPage = () => {
       ) : appointments.length === 0 ? (
         <p>No appointments found.</p>
       ) : (
-        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {appointments.map((a) => (
-            <li key={a.id} className=" p-4 rounded shadow-md">
-              <div className="flex flex-col items-center gap-2">
-                <Image
-                  src={a.doctor.photo_url || "/avatar.png"}
-                  width={80} 
-                  height={80}
-                  alt={a.doctor.name}
-                  className="rounded-full object-cover"
-                />
-                <h2 className=" text-blue-600 font-bold">{a.doctor.name}</h2>
-                <p className="text-sm text-gray-500">
-                  {a.doctor.specialization}
-                </p>
-                <p>Date: {new Date(a.date).toLocaleString()}</p>
-                <p>Status: {a.status}</p>
-              </div>
-            </li>
-          ))}
+        <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {appointments.map((a) => {
+            let statusClasses = "";
+            switch (a.status) {
+              case "PENDING":
+                statusClasses = "bg-yellow-100 text-yellow-800";
+                break;
+              case "COMPLETED":
+                statusClasses = "bg-green-100 text-green-800";
+                break;
+              case "CANCELLED":
+                statusClasses = "bg-red-100 text-red-800";
+                break;
+              default:
+                statusClasses = "bg-gray-100 text-gray-800";
+            }
+
+            return (
+              <li key={a.id} className="p-4 rounded shadow-md">
+                <div className="flex flex-col items-center gap-2">
+                  <img
+                    src={a.doctor.photo_url || "/avatar2.png"}
+                    alt={a.doctor.name}
+                    className="rounded-full object-cover h-14 w-14"
+                  />
+                  <h2 className="text-blue-600 font-bold">{a.doctor.name}</h2>
+                  <p className="text-sm text-gray-500">{a.doctor.specialization}</p>
+                  <p>Date: {new Date(a.date).toLocaleString()}</p>
+                  <span
+                    className={`px-3 py-1 rounded-md font-semibold ${statusClasses}`}
+                  >
+                    {a.status}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 

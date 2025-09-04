@@ -97,7 +97,7 @@ export default function RegisterPage() {
 
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50 md:px-8 text-gray-600">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 md:px-8 text-gray-600 px-4">
       <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-4 md:p-6">
         <h2 className="text-xl font-semibold text-gray-800 text-center mb-4 tracking-tight">
           Create Your Account
@@ -106,7 +106,7 @@ export default function RegisterPage() {
         {/* Role Tabs */}
         <div className="flex rounded-sm overflow-hidden mb-4 shadow-sm text-xs">
           <button
-            className={`flex-1 py-1 font-medium cursor-pointer ${
+            className={`flex-1 py-2 font-medium cursor-pointer ${
               role === "PATIENT"
                 ? "bg-blue-600 text-white"
                 : "bg-white hover:bg-gray-100"

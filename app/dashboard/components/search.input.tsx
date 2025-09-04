@@ -4,10 +4,12 @@ import { FiSearch, FiFilter } from "react-icons/fi";
 import { useState, useEffect, useRef } from "react";
 import { api } from "@/helpers/client.helper";
 import { useSearchStore } from "@/stores/search.store";
+import { useAuthStore } from "@/stores/auth.store";
 
 export const Searching = () => {
   const { query, setQuery, specialization, setSpecialization } =
     useSearchStore();
+  const { user } = useAuthStore(); // get logged-in user
   const [localQuery, setLocalQuery] = useState(query);
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
@@ -68,37 +70,41 @@ export const Searching = () => {
         />
       </div>
 
-      {/* Filter Button */}
-      <button
-        type="button"
-        onClick={() => setFilterOpen((prev) => !prev)}
-        className="bg-white rounded-lg p-2 hover:bg-gray-100 transition cursor-pointer"
-      >
-        <FiFilter size={18} />
-      </button>
-
-      {/* Specialization Filter */}
-      {filterOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white shadow-lg rounded-md w-60 z-50 p-3">
-          <label className="text-sm font-medium mb-1 block">
-            Filter by Specialization
-          </label>
-          <select
-            value={specialization}
-            onChange={(e) => {
-              setSpecialization(e.target.value);
-              setFilterOpen(false);
-            }}
-            className="w-full border border-gray-200 rounded px-2 py-1 text-sm"
+      {/* Filter Button (only for patients) */}
+      {user?.role !== "DOCTOR" && (
+        <>
+          <button
+            type="button"
+            onClick={() => setFilterOpen((prev) => !prev)}
+            className="bg-white rounded-lg p-2 hover:bg-gray-100 transition cursor-pointer"
           >
-            <option value="">All Specializations</option>
-            {specializations.map((spec) => (
-              <option key={spec} value={spec}>
-                {spec}
-              </option>
-            ))}
-          </select>
-        </div>
+            <FiFilter size={18} />
+          </button>
+
+          {/* Specialization Filter */}
+          {filterOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white shadow-lg rounded-md w-60 z-50 p-3">
+              <label className="text-sm font-medium mb-1 block">
+                Filter by Specialization
+              </label>
+              <select
+                value={specialization}
+                onChange={(e) => {
+                  setSpecialization(e.target.value);
+                  setFilterOpen(false);
+                }}
+                className="w-full border border-gray-200 rounded px-2 py-1 text-sm"
+              >
+                <option value="">All Specializations</option>
+                {specializations.map((spec) => (
+                  <option key={spec} value={spec}>
+                    {spec}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
