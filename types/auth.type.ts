@@ -5,6 +5,7 @@ export interface RegisterPatient {
   email: string;
   password: string;
   photo_url?: string;
+  role : string
 }
 
 export interface RegisterDoctor {
@@ -13,6 +14,7 @@ export interface RegisterDoctor {
   password: string;
   specialization: string;
   photo_url?: string;
+  role: string
 }
 
 export type RegisterForm = DoctorForm | PatientForm;
@@ -24,13 +26,13 @@ export interface LoginForm {
 }
 
 // User structure
-interface User {
+export interface User {
   id: string;
-  name: string;
+  name?: string;
   email: string;
   role: "PATIENT" | "DOCTOR";
-  photo_url: string | null;
-  specialization: string | null;
+  photo_url?: string | null;
+  specialization?: string | null;
 }
 
 // Data wrapper
@@ -65,3 +67,17 @@ export interface RegisterResponse {
   data: RegisteredUser;
 }
 
+export interface MyJwtPayload {
+  userId: string;
+  email: string;
+  role: "PATIENT" | "DOCTOR";
+  iat?: number;
+  exp?: number;
+}
+
+export interface Doctor {
+  id: string;
+  name: string;
+  specialization: string;
+  photo_url?: string | null;
+}

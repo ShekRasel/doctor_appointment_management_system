@@ -5,7 +5,6 @@ import { Doctor } from "@/types/auth.type";
 import { api } from "@/helpers/client.helper";
 import { toast } from "react-hot-toast";
 import axios from "axios";
-import Image from "next/image";
 
 interface Props {
   doctor: Doctor;
@@ -55,12 +54,11 @@ const DoctorCard: React.FC<Props> = ({ doctor }) => {
 
   return (
     <div className="bg-white p-4 rounded shadow flex flex-col gap-2">
-      <Image
+      {/* preventing url error using img instead of next image */}
+      <img
         src={doctor.photo_url || "/avatar2.png"}
         alt={doctor.name}
-        className="rounded-full object-cover mx-auto"
-        height={74}
-        width={74}
+        className="rounded-full object-cover mx-auto h-24 w-24 shadow-md"
       />
       <h2 className="text-center font-semibold">{doctor.name}</h2>
       <p className="text-center text-sm text-gray-500">
@@ -73,20 +71,20 @@ const DoctorCard: React.FC<Props> = ({ doctor }) => {
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="border rounded px-2 py-1 text-sm mt-2"
+            className="border rounded px-2 py-1 text-sm mt-2 cursor-pointer"
           />
 
           <button
             onClick={handleBook}
             disabled={loading}
-            className="mt-2 w-full bg-green-600 text-white py-1 rounded hover:bg-green-700 transition disabled:opacity-50"
+            className="mt-2 w-full cursor-pointer bg-green-600 text-white py-1 rounded hover:bg-green-700 transition disabled:opacity-50"
           >
             {loading ? "Booking..." : "Confirm Booking"}
           </button>
 
           <button
             onClick={() => setShowDatePicker(false)}
-            className="mt-1 w-full bg-gray-300 text-gray-700 py-1 rounded hover:bg-gray-400 transition"
+            className="mt-1 cursor-pointer w-full bg-gray-300 text-gray-700 py-1 rounded hover:bg-gray-400 transition"
           >
             Cancel
           </button>
@@ -94,7 +92,7 @@ const DoctorCard: React.FC<Props> = ({ doctor }) => {
       ) : (
         <button
           onClick={() => setShowDatePicker(true)}
-          className="mt-2 w-full bg-blue-600 text-white py-1 rounded hover:bg-blue-700 transition"
+          className="mt-2 w-full bg-blue-600 cursor-pointer text-white py-1 md:py-2 rounded hover:bg-blue-700 transition"
         >
           Book Appointment
         </button>

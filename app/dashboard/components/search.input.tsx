@@ -1,0 +1,83 @@
+"use client";
+
+import { FiSearch, FiFilter } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { api } from "@/helpers/client.helper";
+import { useSearchStore } from "@/stores/search.store";
+
+export const Searching = () => {
+  const { query, setQuery, specialization, setSpecialization } =
+    useSearchStore();
+  const [localQuery, setLocalQuery] = useState(query); // local state for debounce
+  const [specializations, setSpecializations] = useState<string[]>([]);
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  // Fetch specializations
+  useEffect(() => {
+    const fetchSpecializations = async () => {
+      try {
+        const res = await api.get("/specializations");
+
+        if (Array.isArray(res.data.data)) setSpecializations(res.data.data);
+      } catch (err) {
+        console.error("Failed to fetch specializations", err);
+      }
+    };
+    fetchSpecializations();
+  }, []);
+
+  // Debounce search input
+  useEffect(() => {
+    const timeout = setTimeout(() => setQuery(localQuery), 300);
+    return () => clearTimeout(timeout);
+  }, [localQuery, setQuery]);
+
+  return (
+    <div className="flex items-center gap-2 relative">
+      {/* Search Input */}
+      <div className="flex items-center rounded-lg bg-white px-3 py-2 w-52 md:w-72 shadow-sm">
+        <FiSearch className="text-gray-400 w-5 h-5 mr-2" />
+        <input
+          type="text"
+          placeholder="Search doctor..."
+          className="w-full bg-white outline-none text-gray-700 text-sm "
+          value={localQuery}
+          onChange={(e) => setLocalQuery(e.target.value)}
+        />
+      </div>
+
+      {/* Filter Button */}
+      <button
+        type="button"
+        onClick={() => setFilterOpen((prev) => !prev)}
+        className="bg-white rounded-lg p-2 hover:bg-gray-100 transition cursor-pointer"
+      >
+        <FiFilter size={18}/>
+      </button>
+
+      {/* Specialization Filter */}
+      {filterOpen && (
+        <div className="absolute top-full left-0 mt-1 bg-white shadow-lg rounded-md w-60 z-50 p-3">
+          <label className="text-sm font-medium mb-1 block">
+            Filter by Specialization
+          </label>
+          <select
+            value={specialization}
+            onChange={(e) => {
+              setSpecialization(e.target.value);
+              setFilterOpen(false); // close dropdown on select
+            }}
+            className="w-full border rounded px-2 py-1 text-sm"
+          >
+            <option value="">All Specializations</option>
+            {specializations.map((spec) => (
+              <option key={spec} value={spec}>
+                {spec}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
+  );
+};
