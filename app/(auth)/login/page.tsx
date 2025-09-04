@@ -1,6 +1,6 @@
 "use client";
 
-import { api, setToken } from "@/helpers/helper";
+import { api, setTokenCookie } from "@/helpers/client.helper";
 import { useAuthStore } from "@/stores/auth.store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -10,10 +10,11 @@ import Link from "next/link";
 import { LoginForm, loginSchema } from "@/schemas/auth.schema";
 import toast from "react-hot-toast";
 import { LoginResponse } from "@/types/auth.type";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const { setRole } = useAuthStore();
-
+  const { setUser, setToken } = useAuthStore();
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -32,8 +33,20 @@ export default function LoginPage() {
 
     onSuccess: (res: AxiosResponse<LoginResponse>) => {
       const msg: string = res.data.message;
-      const token: string = res.data.data.token;
-      setToken(token);
+      const { token, user } = res.data.data;
+
+      if (token) {
+        setTokenCookie(token);
+        setToken(token);
+        setUser(user);
+
+        localStorage.setItem("token", token);
+
+        if (user.role === "DOCTOR")
+          router.push("/dashboard/doctor/appointments");
+        else router.push("/dashboard/patient/doctorslist");
+      }
+
       toast.success(msg);
     },
 
@@ -49,7 +62,6 @@ export default function LoginPage() {
 
   //submit data
   const onSubmit = (data: LoginForm) => {
-    setRole(data.role);
     mutation.mutate(data);
   };
 

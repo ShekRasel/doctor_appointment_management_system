@@ -1,18 +1,13 @@
 "use client";
 
-import { api } from "@/helpers/helper";
+import { api } from "@/helpers/client.helper";
 import {
   DoctorForm,
   doctorRegisterSchema,
   patientRegisterSchema,
 } from "@/schemas/auth.schema";
 import { useAuthStore } from "@/stores/auth.store";
-import {
-  RegisterDoctor,
-  RegisterForm,
-  RegisterPatient,
-  RegisterResponse,
-} from "@/types/auth.type";
+import { RegisterForm, RegisterResponse } from "@/types/auth.type";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosError, AxiosResponse } from "axios";
@@ -20,48 +15,69 @@ import { FieldErrors, useForm } from "react-hook-form";
 import specializations from "@/data/specializations.json";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function RegisterPage() {
   const { role, setRole } = useAuthStore();
-
+  const router = useRouter();
+  // Pick schema based on role
   const schema =
-    role === "patient" ? patientRegisterSchema : doctorRegisterSchema;
+    role === "DOCTOR" ? doctorRegisterSchema : patientRegisterSchema;
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterForm>({
-    resolver: zodResolver(schema),
-  });
+ const {
+  register,
+  handleSubmit,
+  formState: { errors },
+} = useForm<RegisterForm>({
+  resolver: zodResolver(role === "DOCTOR" ? doctorRegisterSchema : patientRegisterSchema),
+  defaultValues: {
+    name: "",
+    email: "",
+    password: "",
+    photo_url: "",
+    specialization: role === "DOCTOR" ? "" : undefined,
+  },
+});
 
-  //response handing
-  const mutation = useMutation({
-    mutationFn: async (
-      data: RegisterPatient | RegisterDoctor
-    ): Promise<AxiosResponse<RegisterResponse>> => {
-      return await api.post(`/auth/register/${role}`, data);
-    },
+// Mutation
+const mutation = useMutation({
+  mutationFn: async (data: RegisterForm & { selectedRole: "PATIENT" | "DOCTOR" }) => {
+    return api.post<RegisterResponse>(
+      `/auth/register/${data.selectedRole.toLowerCase()}`,
+      data
+    );
+  },
 
-    onSuccess: (res: AxiosResponse<RegisterResponse>) => {
-      const msg = res.data.message;
-      toast.success(msg);
-    },
+  onSuccess: (res: AxiosResponse<RegisterResponse>) => {
+    toast.success(res.data.message);
+    console.log(res.data)
+    router.push("/login");
+  },
 
-    onError: (err: unknown) => {
-      if (err instanceof AxiosError) {
-        const msg = err.response?.data?.message || "Something went wrong";
-        toast.error(msg);
-      } else {
-        toast.error("Unexpected error occurred");
-      }
-    },
-  });
+  onError: (err: unknown) => {
+    if (err instanceof AxiosError) {
+      const msg = err.response?.data?.message || "Something went wrong";
+      toast.error(msg);
+    } else {
+      toast.error("Unexpected error occurred");
+    }
+  },
+});
 
-  // submit call
-  const onSubmit = (data: RegisterForm) => {
-    mutation.mutate(data);
-  };
+// Submit handler
+const onSubmit = (data: RegisterForm) => {
+  // Pass role explicitly when submitting
+  mutation.mutate({ ...data, selectedRole: role as "PATIENT" | "DOCTOR" });
+};
+
+
+  // default role
+  useEffect(() => {
+    if (!role) {
+      setRole("PATIENT");
+    }
+  }, [role, setRole]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4 md:px-8 text-gray-600">
@@ -74,31 +90,31 @@ export default function RegisterPage() {
         <div className="flex rounded-sm overflow-hidden mb-4 shadow-sm text-xs">
           <button
             className={`flex-1 py-1 font-medium cursor-pointer ${
-              role === "patient"
+              role === "PATIENT"
                 ? "bg-blue-600 text-white"
                 : "bg-white hover:bg-gray-100"
             } transition`}
-            onClick={() => setRole("patient")}
+            onClick={() => setRole("PATIENT")}
           >
             Patient
           </button>
           <button
             className={`flex-1 py-1 font-medium cursor-pointer ${
-              role === "doctor"
+              role === "DOCTOR"
                 ? "bg-blue-600 text-white"
                 : "bg-white  hover:bg-gray-100"
             } transition`}
-            onClick={() => setRole("doctor")}
+            onClick={() => setRole("DOCTOR")}
           >
             Doctor
           </button>
         </div>
 
-        {/* registration form */}
+        {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
           <div className="flex justify-between gap-2">
             <div className="w-full">
-              <label className="block  text-xs font-medium mb-1">Name</label>
+              <label className="block text-xs font-medium mb-1">Name</label>
               <input
                 type="text"
                 placeholder="John Doe"
@@ -113,7 +129,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="w-full">
-              <label className="block  text-xs font-medium mb-1">Email</label>
+              <label className="block text-xs font-medium mb-1">Email</label>
               <input
                 type="email"
                 placeholder="john@example.com"
@@ -143,10 +159,10 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {/* role wise field select */}
-          {role === "doctor" && (
+          {/* Doctor-only field */}
+          {role === "DOCTOR" && (
             <div>
-              <label className="block  text-xs font-medium mb-1">
+              <label className="block text-xs font-medium mb-1">
                 Specialization
               </label>
               <select
@@ -181,7 +197,6 @@ export default function RegisterPage() {
               {...register("photo_url")}
               className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md"
             />
-
             {errors.photo_url && (
               <p className="text-red-500 text-xs mt-0.5">
                 {errors.photo_url.message as string}
@@ -189,7 +204,6 @@ export default function RegisterPage() {
             )}
           </div>
 
-          {/* submit buttom */}
           <button
             type="submit"
             disabled={mutation.isPending}
@@ -198,7 +212,6 @@ export default function RegisterPage() {
             {mutation.isPending ? "Registering..." : "Register"}
           </button>
 
-          {/* Login link */}
           <p className="text-xs text-gray-500 text-center mt-2">
             Already have an account?{" "}
             <span className="text-blue-600 hover:underline cursor-pointer">
