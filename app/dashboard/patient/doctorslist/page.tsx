@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Doctor } from "@/types/auth.type";
 import { api } from "@/helpers/client.helper";
@@ -50,9 +50,11 @@ export default function DoctorsListPage() {
     queryFn: () => fetchDoctors(page, limit!, query, specialization),
     enabled: limit !== null,
     staleTime: 2000,
+    placeholderData: keepPreviousData,
   });
 
-  if (!mounted || limit === null) return <p className="text-blue-600">Loading...</p>;
+  if (!mounted || limit === null)
+    return <p className="text-blue-600">Loading...</p>;
   if (isLoading) return <p className="text-blue-600 text-center">Loading...</p>;
   if (error) return <p className="text-red-500">Failed to load doctors</p>;
 
@@ -63,10 +65,7 @@ export default function DoctorsListPage() {
       {/* Doctor Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {data?.data?.map((doctor: Doctor) => (
-          <DoctorCard
-            key={doctor.id}
-            doctor={doctor}
-          />
+          <DoctorCard key={doctor.id} doctor={doctor} />
         ))}
       </div>
 
